@@ -39,3 +39,13 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
+
+# Environment variables
+.env
+
+# Google services config
+google-services.json
+
+# Android and iOS source folders
+android
+ios
