@@ -1,13 +1,9 @@
 import { Button, Image, Text, View } from "react-native"
-import auth from "@react-native-firebase/auth"
-import { GoogleSignin } from "@react-native-google-signin/google-signin"
 import { useState } from "react"
-
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-})
+import { signOut, useSession } from "@/utils/auth"
 
 export default function HomePage() {
+  const { user } = useSession()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   return (
@@ -33,7 +29,7 @@ export default function HomePage() {
             width: 100,
           }}
           source={{
-            uri: auth().currentUser?.photoURL!,
+            uri: user?.photoURL!,
           }}
         />
       </View>
@@ -45,7 +41,7 @@ export default function HomePage() {
             marginBottom: 12,
           }}
         >
-          Welcome, {auth().currentUser?.displayName}. 😊
+          Welcome, {user?.displayName}. 😊
         </Text>
         <Button
           title="Logout"
@@ -53,9 +49,7 @@ export default function HomePage() {
           onPress={async () => {
             setIsSigningOut(true)
             try {
-              await auth().signOut()
-              await GoogleSignin.revokeAccess()
-              await GoogleSignin.signOut()
+              await signOut()
             } finally {
               setIsSigningOut(false)
             }

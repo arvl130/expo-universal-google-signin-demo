@@ -1,12 +1,5 @@
-import { getApps, getApp, initializeApp } from "@firebase/app"
-import {
-  User,
-  signOut as _signOut,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  getAuth,
-} from "@firebase/auth"
+import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth"
+import { GoogleSignin } from "@react-native-google-signin/google-signin"
 
 import { router } from "expo-router"
 import {
@@ -17,20 +10,9 @@ import {
   useState,
 } from "react"
 
-const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-}
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
-
 type AuthContext = {
   isLoading: boolean
-  user: User | null
+  user: FirebaseAuthTypes.User | null
 }
 
 const AuthContext = createContext<AuthContext>({
@@ -45,8 +27,7 @@ export function AuthProvider(props: { children: ReactNode; [x: string]: any }) {
   })
 
   useEffect(() => {
-    const auth = getAuth(app)
-    return onAuthStateChanged(auth, (user) =>
+    return auth().onAuthStateChanged((user) =>
       setSession({
         isLoading: false,
         user,
@@ -57,15 +38,25 @@ export function AuthProvider(props: { children: ReactNode; [x: string]: any }) {
   return <AuthContext.Provider value={session} {...props} />
 }
 
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+})
+
 export async function signInWithGoogle() {
-  const auth = getAuth(app)
-  const provider = new GoogleAuthProvider()
-  await signInWithPopup(auth, provider)
+  await GoogleSignin.hasPlayServices({
+    showPlayServicesUpdateDialog: true,
+  })
+
+  const { idToken } = await GoogleSignin.signIn()
+  const googleCredential = auth.GoogleAuthProvider.credential(idToken)
+
+  await auth().signInWithCredential(googleCredential)
 }
 
 export async function signOut() {
-  const auth = getAuth(app)
-  await _signOut(auth)
+  await auth().signOut()
+  await GoogleSignin.revokeAccess()
+  await GoogleSignin.signOut()
 }
 
 export function useSession(
